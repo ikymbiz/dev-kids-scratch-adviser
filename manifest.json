@@ -1,0 +1,15 @@
+{
+  "name": "Scratch AI Mentor",
+  "short_name": "ScratchAI",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#4d97ff",
+  "theme_color": "#4d97ff",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968263.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -2,122 +2,106 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scratch AIメンター</title>
+    <title>Scratch AIメンター (JSON版)</title>
     <style>
-        /* スタイルはさらに使いやすく調整 */
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #e5e9f0; display: flex; justify-content: center; padding: 20px; margin: 0; }
-        #chat-container { width: 100%; max-width: 600px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; height: 90vh; }
-        #chat-header { background: #4d97ff; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.2em; border-bottom: 4px solid #3d87ef; }
-        #api-area { background: #fff9db; padding: 10px; font-size: 0.8em; border-bottom: 1px solid #ddd; text-align: center; }
-        #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background-image: radial-gradient(#f0f0f0 10%, transparent 10%); background-size: 20px 20px; }
-        .message { padding: 12px 18px; border-radius: 20px; max-width: 85%; white-space: pre-wrap; line-height: 1.6; font-size: 0.95em; position: relative; }
-        .bot { background: #ffffff; align-self: flex-start; border: 2px solid #4d97ff; color: #333; border-bottom-left-radius: 2px; }
-        .user { background: #4d97ff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        #input-area { border-top: 1px solid #eee; padding: 20px; display: flex; gap: 10px; background: white; }
-        #user-input { flex: 1; border: 2px solid #ddd; border-radius: 30px; padding: 12px 20px; outline: none; font-size: 1em; }
-        #user-input:focus { border-color: #4d97ff; }
-        #send-btn { background: #4d97ff; color: white; border: none; padding: 0 25px; border-radius: 30px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        #send-btn:hover { background: #3d87ef; }
-        #send-btn:disabled { background: #ccc; }
-        .persona-tag { font-size: 0.7em; color: #4d97ff; font-weight: bold; margin-bottom: 5px; display: block; }
+        /* スタイルは前回と同じため省略（そのまま使えます） */
+        body { font-family: sans-serif; background-color: #e5e9f0; display: flex; justify-content: center; padding: 20px; }
+        #chat-container { width: 100%; max-width: 550px; background: white; border-radius: 20px; shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column; height: 90vh; overflow: hidden; }
+        #chat-header { background: #4d97ff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .reset-btn { background: #ff4d4d; border: none; color: white; padding: 5px 10px; border-radius: 10px; cursor: pointer; }
+        #chat-box { flex: 1; padding: 15px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 15px; max-width: 80%; white-space: pre-wrap; font-size: 0.9em; }
+        .bot { background: white; border: 2px solid #4d97ff; align-self: flex-start; }
+        .user { background: #4d97ff; color: white; align-self: flex-end; }
+        #input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; }
+        #user-input { flex: 1; border-radius: 20px; border: 1px solid #ddd; padding: 10px; }
     </style>
 </head>
 <body>
 
 <div id="chat-container">
-    <div id="chat-header">Scratch AIメンター</div>
-    <div id="api-area">
-        APIキー: <input type="password" id="api-key" placeholder="AI Studioのキーを入力">
+    <div id="chat-header">
+        <span>Scratch AIメンター</span>
+        <button class="reset-btn" onclick="resetChat()">最初から</button>
+    </div>
+    <div style="background:#fff9db; font-size:10px; padding:5px; text-align:center;">
+        API Key: <input type="password" id="api-key" placeholder="Keyを入力">
     </div>
     <div id="chat-box">
-        <div class="message bot">こんにちは！Scratchでゲーム作りを始める前に、あなたのことを少し教えてね。<br><br><b>・学年や年齢（または大人の方か）<br>・Scratchの経験（はじめて、少し知ってる、得意！）<br>・今から作りたいゲームのイメージ</b><br><br>を教えてもらえるかな？</div>
+        <div class="message bot">こんにちは！Scratchの先生だよ。きみの「学年」と「Scratchをどのくらいやったことがあるか」を教えてね！</div>
     </div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="まずは自己紹介してね！">
-        <button id="send-btn" onclick="handleSend()">送信</button>
+        <input type="text" id="user-input" placeholder="例：小学4年生、少し知ってる">
+        <button id="send-btn" onclick="handleSend()" style="border-radius:20px; border:none; background:#4d97ff; color:white; padding:0 15px;">送信</button>
     </div>
 </div>
 
 <script type="module">
     import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-    const chatBox = document.getElementById('chat-box');
-    const userInput = document.getElementById('user-input');
-    const apiKeyInput = document.getElementById('api-key');
-    
-    let userPersona = ""; // 利用者の情報を保存
-    let isPersonaSet = false; // ペルソナ設定が終わったかどうか
+    let userPersona = "";
+    let isPersonaSet = false;
+    let prompts = {};
+
+    // 1. JSONファイルを読み込む
+    async function loadPrompts() {
+        try {
+            const response = await fetch('prompts.json');
+            prompts = await response.json();
+        } catch (e) {
+            console.error("JSONの読み込みに失敗しました", e);
+        }
+    }
+    loadPrompts();
+
+    window.resetChat = function() {
+        location.reload(); // 一番確実な初期化
+    };
 
     async function handleSend() {
-        const text = userInput.value.trim();
-        const apiKey = apiKeyInput.value.trim();
-
-        if (!text) return;
-        if (!apiKey) {
-            alert("APIキーを入力してね！");
-            return;
-        }
+        const text = document.getElementById('user-input').value.trim();
+        const apiKey = document.getElementById('api-key').value.trim();
+        if (!text || !apiKey) return;
 
         addMessage(text, 'user');
-        userInput.value = "";
-        
+        document.getElementById('user-input').value = "";
         const loadingDiv = addMessage("考え中...", 'bot');
 
         try {
             const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+            const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
-            let prompt = "";
-
+            let finalPrompt = "";
             if (!isPersonaSet) {
-                // ペルソナ設定フェーズ
                 userPersona = text;
                 isPersonaSet = true;
-                userInput.placeholder = "ゲーム作りの質問をどうぞ！";
-                
-                prompt = `
-                    あなたはScratchの専門家です。
-                    今、利用者から自己紹介がありました： 「${userPersona}」
-                    
-                    1. 挨拶をしてください。
-                    2. その人のレベルに合わせた話し方（子供なら優しく、大人なら丁寧に）を心がけることを宣言してください。
-                    3. 何か一つ、その人が作りたそうなゲームに関するワクワクするアイデアを提案して、質問を促してください。
-                `;
+                // JSONのテンプレートを置換
+                finalPrompt = prompts.system_instructions + "\n" + 
+                              prompts.persona_phase.replace("{{persona}}", userPersona);
             } else {
-                // 通常のアドバイスフェーズ
-                prompt = `
-                    利用者のプロフィール: ${userPersona}
-                    
-                    あなたは上記のプロフィールを持つ利用者をサポートするScratchメンターです。
-                    利用者のレベルに合わせた言葉遣いと具体例を使って、次の質問に答えてください。
-                    ブロックの名前を出すときは「[10歩動かす]」のようにカッコで囲ってください。
-                    
-                    質問: ${text}
-                `;
+                finalPrompt = prompts.system_instructions + "\n" + 
+                              prompts.advice_phase.replace("{{persona}}", userPersona)
+                                                   .replace("{{user_input}}", text);
             }
 
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            loadingDiv.innerText = response.text();
-            
-        } catch (error) {
-            loadingDiv.innerText = "エラー: " + error.message;
+            const result = await model.generateContent(finalPrompt);
+            loadingDiv.innerText = result.response.text();
+        } catch (e) {
+            loadingDiv.innerText = "エラーが起きたよ: " + e.message;
         }
     }
 
     function addMessage(text, sender) {
         const div = document.createElement('div');
-        div.classList.add('message', sender);
+        div.className = `message ${sender}`;
         div.innerText = text;
-        chatBox.appendChild(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        const box = document.getElementById('chat-box');
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
         return div;
     }
 
     window.handleSend = handleSend;
-    userInput.addEventListener("keypress", (e) => { if (e.key === "Enter") handleSend(); });
 </script>
-
 </body>
 </html>
